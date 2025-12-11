@@ -1,5 +1,6 @@
 {
   "port": 3000,
+  "api_key": "fk-0rDiT81npCMAXnJxxktq",
   "model_redirects": {
     "claude-3-5-haiku-20241022": "claude-haiku-4-5-20251001",
     "claude-sonnet-4-5": "claude-sonnet-4-5-20250929",
