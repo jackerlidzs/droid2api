@@ -12,9 +12,6 @@ app.use(express.json({ limit: '50mb' }));
 const API_KEY = process.env.API_KEY || 'default-key-please-change';
 
 // ==================== API KEY AUTHENTICATION ====================
-// Lấy API key từ environment variable
-const API_KEY = process.env.API_KEY;
-
 // Chỉ bật auth nếu có API_KEY được set
 if (API_KEY) {
   logger.info('API Key authentication enabled');
