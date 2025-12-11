@@ -8,6 +8,42 @@ import { initializeUserAgentUpdater } from './user-agent-updater.js';
 const app = express();
 
 app.use(express.json({ limit: '50mb' }));
+// ==================== API KEY AUTH ====================
+const API_KEY = process.env.API_KEY || config.api_key;
+
+app.use((req, res, next) => {
+  // Skip public endpoints
+  if (req.path === '/health' || req.path === '/') {
+    return next();
+  }
+  
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({
+      error: {
+        message: 'Missing API key',
+        type: 'invalid_request_error'
+      }
+    });
+  }
+  
+  const providedKey = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (providedKey !== API_KEY) {
+    return res.status(401).json({
+      error: {
+        message: 'Invalid API key',
+        type: 'invalid_request_error'
+      }
+    });
+  }
+  
+  next();
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+// ==================== END AUTH ====================
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use((req, res, next) => {
