@@ -11,37 +11,64 @@ app.use(express.json({ limit: '50mb' }));
 // ==================== API KEY AUTH ====================
 const API_KEY = process.env.API_KEY || 'default-key-please-change';
 
-app.use((req, res, next) => {
-  // Skip public endpoints
-  if (req.path === '/health' || req.path === '/') {
-    return next();
-  }
-  
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({
-      error: {
-        message: 'Missing API key',
-        type: 'invalid_request_error'
-      }
-    });
-  }
-  
-  const providedKey = authHeader.replace(/^Bearer\s+/i, '').trim();
-  if (providedKey !== API_KEY) {
-    return res.status(401).json({
-      error: {
-        message: 'Invalid API key',
-        type: 'invalid_request_error'
-      }
-    });
-  }
-  
-  next();
-});
+// ==================== API KEY AUTHENTICATION ====================
+// Lấy API key từ environment variable
+const API_KEY = process.env.API_KEY;
 
+// Chỉ bật auth nếu có API_KEY được set
+if (API_KEY) {
+  logger.info('API Key authentication enabled');
+  
+  app.use((req, res, next) => {
+    // Skip public endpoints
+    const publicPaths = ['/health', '/', '/favicon.ico'];
+    if (publicPaths.includes(req.path)) {
+      return next();
+    }
+    
+    // Get Authorization header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader) {
+      logger.warn(`Missing API key from ${req.ip}`);
+      return res.status(401).json({
+        error: {
+          message: 'Missing API key. Please provide Authorization: Bearer YOUR_KEY',
+          type: 'invalid_request_error',
+          code: 'missing_api_key'
+        }
+      });
+    }
+    
+    // Extract Bearer token
+    const providedKey = authHeader.replace(/^Bearer\s+/i, '').trim();
+    
+    // Validate
+    if (providedKey !== API_KEY) {
+      logger.warn(`Invalid API key from ${req.ip}`);
+      return res.status(401).json({
+        error: {
+          message: 'Invalid API key',
+          type: 'invalid_request_error',
+          code: 'invalid_api_key'
+        }
+      });
+    }
+    
+    // Valid - continue
+    next();
+  });
+} else {
+  logger.warn('⚠️  API Key authentication DISABLED - API is public!');
+}
+
+// Health check (always public)
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    auth: API_KEY ? 'enabled' : 'disabled'
+  });
 });
 // ==================== END AUTH ====================
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
