@@ -9,7 +9,7 @@ const app = express();
 
 app.use(express.json({ limit: '50mb' }));
 // ==================== API KEY AUTH ====================
-const API_KEY = process.env.API_KEY || config.api_key;
+const API_KEY = process.env.API_KEY || 'default-key-please-change';
 
 app.use((req, res, next) => {
   // Skip public endpoints
